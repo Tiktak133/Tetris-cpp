@@ -1,31 +1,49 @@
+#include "Display.h"
 #include <iostream>
 #include <fcntl.h>
+#ifdef _WIN32
 #include <io.h>
+#endif
+#include <string>
 
-class Display
+Display::Display(int width, int height)
 {
-public:
-	Display(int x, int y);
-	void Start();
-	void DrawScreen();
-	void DrawPixelAt(int x, int y, int r, int g, int b);
-	~Display();
+	width_ = width;
+	height_ = height;
+	InitSysCompatible();
+	DrawScreen();
+}
 
-private:
-	int  width_;
-	int height_;
-	int y_start_ = 0;
-	static constexpr const wchar_t* pixelStrength[] = { L"  ", L"░░", L"▒▒", L"▓▓", L"██"};
-};
-
-void Display::Start()
+void Display::InitSysCompatible() 
 {
-	
+#ifdef _WIN32
+	(void)_setmode(_fileno(stdout), _O_U16TEXT); // Konfiguracja konsoli pod Visual Studio / Windows
+#else
+	try {
+		std::locale::global(std::locale("C.UTF-8"));
+	}
+	catch (...) {
+		std::locale::global(std::locale("")); // locale z systemu (np. pl_PL.UTF-8)
+	}
+	std::wcout.imbue(std::locale());
+#endif
+	std::wcout << L"\033[2J\033[H"; // Wyczyszczenie ekranu na starcie
 }
 
 void Display::DrawScreen()
 {
-	
+	const wchar_t H = L'\u2550';	// ═
+	const wchar_t V = L'\u2551';	// ║
+	const wchar_t TL = L'\u2554';	// ╔
+	const wchar_t TR = L'\u2557';	// ╗
+	const wchar_t BL = L'\u255A';	// ╚
+	const wchar_t BR = L'\u255D';	// ╝
+
+	std::wstring border(width_ * 2, H);
+	std::wcout << TL << border << TR << L'\n';
+	for (int i = 0; i < height_; i++)
+		std::wcout << V << std::wstring(width_ * 2, L' ') << V << L'\n';
+	std::wcout << BL << border << BR << L'\n';
 }
 
 void Display::DrawPixelAt(int x, int y, int r, int g, int b)
@@ -38,22 +56,7 @@ void Display::DrawPixelAt(int x, int y, int r, int g, int b)
 	std::wcout << L"\033[0m";
 }
 
-Display::Display(int x, int y)
-{
-	width_ = x;
-	height_ = y;
-}
-
 Display::~Display()
 {
-
+	
 }
-
-enum pixelState
-{
-	empty,
-	light,
-	medium,
-	dense,
-	full
-};

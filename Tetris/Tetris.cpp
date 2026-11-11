@@ -1,47 +1,94 @@
 ﻿#include <iostream>
 #include <fcntl.h>
-#ifdef _WIN32
-#include <io.h>
-#endif
+#include "Display.h"
+#include <chrono>
+#include <thread>
+#include <conio.h>
+#include "Actions.h"
 
-// Funkcja rysuje jeden piksel o podanym kolorze RGB na konkretnej pozycji X, Y
-void drawPixelAt(int x, int y, int r, int g, int b) {
-    // 1. Skaczemy kursorem na pozycję Y, X (uwaga: w ANSI podaje się Y, potem X, indeksowane od 1)
-    std::wcout << L"\033[" << (y + 1) << L";" << (x * 2 + 1) << L"H";
+using Clock = std::chrono::steady_clock;
 
-    // 2. Ustawiamy kolor tła i wypisujemy dwie spacje (nasz kwadratowy piksel)
-    std::wcout << L"\033[48;2;" << r << L";" << g << L";" << b << L"m  ";
-
-    // 3. Resetujemy kolory, żeby nie zepsuć reszty konsoli
-    std::wcout << L"\033[0m";
+void Inputs(Action action)
+{
+	switch (action)
+	{
+	case Action::Left:   std::wcout << L"Klocek w lewo  \n"; break;
+	case Action::Right:  std::wcout << L"Klocek w prawo \n"; break;
+	case Action::Down:   std::wcout << L"Klocek w dół   \n"; break;
+	case Action::Rotate: std::wcout << L"Obrót          \n"; break;
+	default: break;
+	}
 }
 
-int main() {
-#ifdef _WIN32
-    _setmode(_fileno(stdout), _O_U16TEXT); // Konfiguracja konsoli pod Visual Studio / Windows
-#else
-    std::locale::global(std::locale("C.UTF-8")); // lub std::locale("")
-    std::wcout.imbue(std::locale("C.UTF-8"));
-#endif
-    std::wcout << L"\033[2J\033[H"; // Wyczyszczenie ekranu na starcie
+/// <summary>
+/// Pętla gry
+/// </summary>
+void Update(const double* delta) 
+{
 
-    // Wypisujemy jakiś stały interfejs tekstowy, który ma stać w miejscu
-    std::wcout << L"=== SILNIK GRAFICZNY W KONSOLI ===\n";
-    std::wcout << L"Punkty: 1500\n";
-    std::wcout << L"----------------------------------\n";
+}
 
-    // Rysujemy piksele w losowych miejscach, kompletnie ignorując tekst powyżej
-    drawPixelAt(0, 0, 255, 0, 0);
-    drawPixelAt(1, 1, 0, 255, 0);
-    drawPixelAt(2, 2, 0, 0, 255);
+void Render(Display& display)
+{
+	//display.DrawStats();
+}
 
-    // Na koniec przesuwamy kursor bezpiecznie na dół, żeby tekst systemowy niczego nie zamazal
-    std::wcout << L"\033[12;1H";
+int main() 
+{
+	Display display(10, 20);
 
-    std::wcout << L"\033[38;2;255;0;0m" << L"░░" << L" - 25%\n";
-    std::wcout << L"\033[38;2;0;255;0m" << L"▒▒" << L" - 50%\n";
-    std::wcout << L"\033[38;2;0;0;255m" << L"▓▓" << L" - 75%\n";
-    std::wcout << L"\033[38;2;255;255;0m" << L"██" << L" - 100%\n\n";
+    const auto frameTime = std::chrono::milliseconds(16); // ~60 FPS
+    double fallInterval = 0.5;   // klocek spada co 0.5 s
+    double fallTimer = 0.0;
+
+    auto last = Clock::now();
+    bool running = true;
+
+	while (running)
+	{
+		// --- delta ---
+		auto frameStart = Clock::now();
+		double dt = std::chrono::duration<double>(frameStart - last).count(); // w sekundach
+		last = frameStart;
+		if (dt > 0.25) dt = 0.25; // np. po pauzie w debuggerze – bez nagłego skoku
+
+		while (_kbhit())
+		{
+			Action a = ReadAction();
+			if (a == Action::Quit) running = false;
+			else Inputs(a);
+		}
+
+		Update(&dt);
+		Render(display);
+
+		// limit FPS (żeby nie zjadać 100% CPU)
+		auto elapsed = Clock::now() - frameStart;
+		if (elapsed < frameTime)
+			std::this_thread::sleep_for(frameTime - elapsed);
+	}
 
     return 0;
 }
+
+
+/*
+// Wypisujemy jakiś stały interfejs tekstowy, który ma stać w miejscu
+std::wcout << L"=== SILNIK GRAFICZNY W KONSOLI ===\n";
+std::wcout << L"Punkty: 1500\n";
+std::wcout << L"----------------------------------\n";
+
+// Rysujemy piksele w losowych miejscach, kompletnie ignorując tekst powyżej
+drawPixelAt(0, 0, 255, 0, 0);
+drawPixelAt(1, 1, 0, 255, 0);
+drawPixelAt(2, 2, 0, 0, 255);
+drawPixelAt(10, 20, 255, 255, 255);
+
+// Na koniec przesuwamy kursor bezpiecznie na dół, żeby tekst systemowy niczego nie zamazal
+//std::wcout << L"\033[12;1H";
+
+//std::wcout << L"\033[38;2;255;0;0m" << L"░░" << L" - 25%\n";
+//std::wcout << L"\033[38;2;0;255;0m" << L"▒▒" << L" - 50%\n";
+//std::wcout << L"\033[38;2;0;0;255m" << L"▓▓" << L" - 75%\n";
+//std::wcout << L"\033[38;2;255;255;0m" << L"██" << L" - 100%\n\n";
+*/
