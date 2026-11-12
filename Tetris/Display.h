@@ -1,4 +1,10 @@
 #pragma once
+#include <iostream>
+#include <fcntl.h>
+#ifdef _WIN32
+#include <io.h>
+#endif
+#include <string>
 
 class Display
 {

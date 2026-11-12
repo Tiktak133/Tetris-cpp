@@ -5,6 +5,7 @@
 #include <thread>
 #include <conio.h>
 #include "Action.h"
+#include "Game.h"
 
 using Clock = std::chrono::steady_clock;
 
@@ -20,9 +21,14 @@ void Inputs(const Action& action)
 	}
 }
 
-void Update(const double& delta) 
+void Update(Game& game, const double& delta)
 {
-	
+	game.fallTimer += delta;                          
+	while (game.fallTimer >= game.fallInterval)    
+	{
+		game.fallTimer -= game.fallInterval;       
+		game.MovePieceDown();
+	}
 }
 
 void Render(Display& display)
@@ -33,10 +39,9 @@ void Render(Display& display)
 int main() 
 {
 	Display display(10, 20);
+	Game game = Game(display);
 
     const auto frameTime = std::chrono::milliseconds((int)(1000.0 / 30.0)); // ~30 FPS
-    double fallInterval = 0.5;   // klocek spada co 0.5 s
-    double fallTimer = 0.0;
 
     auto last = Clock::now();
     bool running = true;
@@ -56,7 +61,7 @@ int main()
 			else Inputs(a);
 		}
 
-		Update(dt);
+		Update(game, dt);
 		Render(display);
 
 		// limit FPS (żeby nie zjadać 100% CPU)

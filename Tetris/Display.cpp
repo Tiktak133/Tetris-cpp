@@ -1,10 +1,4 @@
 #include "Display.h"
-#include <iostream>
-#include <fcntl.h>
-#ifdef _WIN32
-#include <io.h>
-#endif
-#include <string>
 
 Display::Display(int width, int height)
 {
