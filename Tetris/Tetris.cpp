@@ -4,28 +4,25 @@
 #include <chrono>
 #include <thread>
 #include <conio.h>
-#include "Actions.h"
+#include "Action.h"
 
 using Clock = std::chrono::steady_clock;
 
-void Inputs(Action action)
+void Inputs(const Action& action)
 {
 	switch (action)
 	{
-	case Action::Left:   std::wcout << L"Klocek w lewo  \n"; break;
-	case Action::Right:  std::wcout << L"Klocek w prawo \n"; break;
-	case Action::Down:   std::wcout << L"Klocek w dół   \n"; break;
-	case Action::Rotate: std::wcout << L"Obrót          \n"; break;
-	default: break;
+		case Action::Left:   std::wcout << L"Klocek w lewo  \n"; break;
+		case Action::Right:  std::wcout << L"Klocek w prawo \n"; break;
+		case Action::Down:   std::wcout << L"Klocek w dół   \n"; break;
+		case Action::Rotate: std::wcout << L"Obrót          \n"; break;
+		default: break;
 	}
 }
 
-/// <summary>
-/// Pętla gry
-/// </summary>
-void Update(const double* delta) 
+void Update(const double& delta) 
 {
-
+	
 }
 
 void Render(Display& display)
@@ -37,7 +34,7 @@ int main()
 {
 	Display display(10, 20);
 
-    const auto frameTime = std::chrono::milliseconds(16); // ~60 FPS
+    const auto frameTime = std::chrono::milliseconds((int)(1000.0 / 30.0)); // ~30 FPS
     double fallInterval = 0.5;   // klocek spada co 0.5 s
     double fallTimer = 0.0;
 
@@ -59,7 +56,7 @@ int main()
 			else Inputs(a);
 		}
 
-		Update(&dt);
+		Update(dt);
 		Render(display);
 
 		// limit FPS (żeby nie zjadać 100% CPU)
