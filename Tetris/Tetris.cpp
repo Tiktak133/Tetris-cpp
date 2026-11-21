@@ -9,14 +9,14 @@
 
 using Clock = std::chrono::steady_clock;
 
-void Inputs(const Action& action)
+void Inputs(Game& game, const Action& action)
 {
 	switch (action)
 	{
-		case Action::Left:   std::wcout << L"Klocek w lewo  \n"; break;
-		case Action::Right:  std::wcout << L"Klocek w prawo \n"; break;
-		case Action::Down:   std::wcout << L"Klocek w dół   \n"; break;
-		case Action::Rotate: std::wcout << L"Obrót          \n"; break;
+		case Action::Left:   game.MovePieceLeft(); break;
+		case Action::Right:  game.MovePieceRight(); break;
+		case Action::Down:   game.DropPiece(); break;
+		case Action::Rotate: game.RotatePiece(); break;
 		default: break;
 	}
 }
@@ -58,7 +58,7 @@ int main()
 		{
 			Action a = ReadAction();
 			if (a == Action::Quit) running = false;
-			else Inputs(a);
+			else Inputs(game, a);
 		}
 
 		Update(game, dt);

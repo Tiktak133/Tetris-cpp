@@ -12,43 +12,53 @@ Game::Game(Display& display) : display_(display)
 	SpawnNewPiece();
 }
 
+Game::~Game()
+{
+
+}
+
+
+
 void Game::MovePieceDown()
 {
-	// Tutaj logika przesuwania klocka w dół
-	std::wcout << L"Klocek spada w dół\n";
+	UpdateLook(posX_, posY_++);
 }
 
 void Game::MovePieceLeft()
 {
-	// Tutaj logika przesuwania klocka w lewo
-	std::wcout << L"Klocek w lewo\n";
+	if (posX_ > 0)
+		UpdateLook(posX_--, posY_);
 }
 
 void Game::MovePieceRight()
 {
-	// Tutaj logika przesuwania klocka w prawo
-	std::wcout << L"Klocek w prawo\n";
+	if (posX_ < display_.getWidth() - currentPiece_.size)
+		UpdateLook(posX_++, posY_);
 }
 
 void Game::RotatePiece() //90 stopni zgodnie z zegarem
 {
-	// Tutaj logika obracania klocka
-	std::wcout << L"Obrót klocka\n";
+	Rotate(currentPiece_);
+	UpdateLook(posX_, posY_);
 }
 
 void Game::DropPiece()
 {
-	// Tutaj logika upuszczania klocka na dół
-	std::wcout << L"Klocek upuszczony na dół\n";
+	display_.FillRect(posX_, posY_, currentPiece_.size, currentPiece_.size, 0, 0, 0);
+	posY_ = display_.getHeight() - calcHeightOfPiece(false);
+	display_.DrawPieceAt(posX_, posY_, currentPiece_);
+}
+
+void Game::UpdateLook(int oldX, int oldY)
+{
+	display_.FillRect(oldX, oldY, currentPiece_.size, currentPiece_.size, 0, 0, 0);
+	display_.DrawPieceAt(posX_, posY_, currentPiece_);
 }
 
 // --- Private ----
 
 void Game::SpawnNewPiece()
 {
-	// Tutaj logika generowania nowego klocka
-	std::wcout << L"Nowy klocek pojawił się\n";
-
 	if (bag_.empty())
 	{
 		bag_ = { 0, 1, 2, 3, 4, 5, 6 };
@@ -58,9 +68,23 @@ void Game::SpawnNewPiece()
 	bag_.pop_back();
 	posX_ = 3;
 	posY_ = 0;
+
+	UpdateLook(posX_, posY_);
 }
 
-Game::~Game()
+int Game::calcHeightOfPiece(const bool ifRotate)
 {
+	int minY = 4;
+	int maxY = -1;
 
+	for (int y = 0; y < currentPiece_.size; y++)
+		for (int x = 0; x < currentPiece_.size; x++)
+			if (currentPiece_.cells[y][x])
+			{
+				int row = ifRotate ? x : y;
+				minY = std::min(minY, row);
+				maxY = std::max(maxY, row);
+			}
+
+	return maxY - minY + 1;
 }

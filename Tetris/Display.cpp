@@ -38,17 +38,40 @@ void Display::DrawScreen()
 	for (int i = 0; i < height_; i++)
 		std::wcout << V << std::wstring(width_ * 2, L' ') << V << L'\n';
 	std::wcout << BL << border << BR << L'\n';
+
+	Clear();
 }
 
 void Display::DrawPixelAt(int x, int y, int r, int g, int b)
 {
 	// 1. Skaczemy kursorem na pozycję Y, X (uwaga: w ANSI podaje się Y, potem X, indeksowane od 1)
-	std::wcout << L"\033[" << (y + 1) << L";" << (x * 2 + 1) << L"H";
+	std::wcout << L"\033[" << (y + 2) << L";" << (x * 2 + 2) << L"H";
 	// 2. Ustawiamy kolor tła i wypisujemy dwie spacje (nasz kwadratowy piksel)
 	std::wcout << L"\033[48;2;" << r << L";" << g << L";" << b << L"m  ";
 	// 3. Resetujemy kolory, żeby nie zepsuć reszty konsoli
 	std::wcout << L"\033[0m";
+	std::wcout << L"\033[" << (height_ + 3) << L";1H";
 }
+
+void Display::FillRect(int x, int y, int width, int height, int r, int g, int b)
+{
+	for (int j = 0; j < height; j++)
+		for (int i = 0; i < width; i++)
+			DrawPixelAt(x + i, y + j, r, g, b);
+}
+
+void Display::DrawPieceAt(int x, int y, const struct Piece& piece)
+{
+	for (int j = 0; j < piece.size; j++)
+		for (int i = 0; i < piece.size; i++)
+			if (piece.cells[j][i])
+				DrawPixelAt(x + i, y + j, piece.color.r, piece.color.g, piece.color.b);
+}
+
+void Display::Clear()
+{
+	FillRect(0, 0, width_, height_, 0, 0, 0);
+}	
 
 Display::~Display()
 {

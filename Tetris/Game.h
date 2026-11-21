@@ -18,6 +18,7 @@ public:
 	void MovePieceRight();
 	void RotatePiece();
 	void DropPiece();
+	void UpdateLook(int oldX, int oldY);
 
 private:
 	Display& display_;
@@ -27,4 +28,5 @@ private:
 	int posX_;
 	int posY_;
 	std::mt19937 rng_; // generator liczb losowych
+	int calcHeightOfPiece(const bool ifRotate = false);
 };
