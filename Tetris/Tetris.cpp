@@ -1,5 +1,4 @@
 ﻿#include <iostream>
-#include <fcntl.h>
 #include "Display.h"
 #include <chrono>
 #include <thread>

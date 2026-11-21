@@ -18,10 +18,10 @@ public:
 	void MovePieceRight();
 	void RotatePiece();
 	void DropPiece();
-	void UpdateLook(int oldX, int oldY);
 
 private:
 	Display& display_;
+	int currentType_;
 	Piece currentPiece_;
 	void SpawnNewPiece();
 	std::vector<int> bag_;
@@ -29,4 +29,6 @@ private:
 	int posY_;
 	std::mt19937 rng_; // generator liczb losowych
 	int calcHeightOfPiece(const bool ifRotate = false);
+	void UpdateLook(int oldX, int oldY);
+	void FreezePiece();
 };

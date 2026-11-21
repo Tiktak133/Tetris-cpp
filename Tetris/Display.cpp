@@ -2,6 +2,7 @@
 
 Display::Display(int width, int height)
 {
+	board_.resize(width * height, 0);
 	width_ = width;
 	height_ = height;
 	InitSysCompatible();
@@ -22,6 +23,7 @@ void Display::InitSysCompatible()
 	std::wcout.imbue(std::locale());
 #endif
 	std::wcout << L"\033[2J\033[H"; // Wyczyszczenie ekranu na starcie
+	std::wcout << L"\033[?25l";     // Ukrycie kursora
 }
 
 void Display::DrawScreen()
@@ -68,12 +70,55 @@ void Display::DrawPieceAt(int x, int y, const struct Piece& piece)
 				DrawPixelAt(x + i, y + j, piece.color.r, piece.color.g, piece.color.b);
 }
 
+// value = typ klocka + 1 (0 oznacza pustą kratkę)
+void Display::FreezePieceAt(int x, int y, const struct Piece& piece, unsigned char value)
+{
+	for (int j = 0; j < piece.size; j++)
+		for (int i = 0; i < piece.size; i++)
+			if (piece.cells[j][i])
+				SetCell(x + i, y + j, value);
+
+	DrawPieceAt(x, y, piece);
+}
+
 void Display::Clear()
 {
 	FillRect(0, 0, width_, height_, 0, 0, 0);
-}	
+}
+
+// Odtwarza prostokąt z warstwy stałej (board_): pusta kratka = czarna, zajęta = kolor swojego klocka
+void Display::RestoreRect(int x, int y, int width, int height)
+{
+	for (int j = y; j < y + height; j++)
+		for (int i = x; i < x + width; i++)
+		{
+			if (i < 0 || i >= width_ || j < 0 || j >= height_)
+				continue; // poza planszą - nie rysujemy (nie zamaże ramki)
+
+			unsigned char value = GetCell(i, j);
+			if (value == 0)
+				DrawPixelAt(i, j, 0, 0, 0);
+			else
+			{
+				const Color& c = PIECES[value - 1].color;
+				DrawPixelAt(i, j, c.r, c.g, c.b);
+			}
+		}
+}
+
+void Display::SetCell(int x, int y, unsigned char value)
+{
+	if (x < 0 || x >= width_ || y < 0 || y >= height_)
+		return; // poza planszą - nic nie zapisujemy
+	board_[y * width_ + x] = value;
+}
+
+unsigned char Display::GetCell(int x, int y) const
+{
+	return board_[y * width_ + x];
+}
 
 Display::~Display()
 {
-	
+	std::wcout << L"\033[?25h"; // Przywrócenie kursora po wyjściu z gry
 }

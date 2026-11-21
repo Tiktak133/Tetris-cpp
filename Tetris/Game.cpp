@@ -21,7 +21,10 @@ Game::~Game()
 
 void Game::MovePieceDown()
 {
-	UpdateLook(posX_, posY_++);
+	if (posY_ < display_.getHeight() - calcHeightOfPiece(false))
+		UpdateLook(posX_, posY_++);
+	else
+		FreezePiece();
 }
 
 void Game::MovePieceLeft()
@@ -44,15 +47,9 @@ void Game::RotatePiece() //90 stopni zgodnie z zegarem
 
 void Game::DropPiece()
 {
-	display_.FillRect(posX_, posY_, currentPiece_.size, currentPiece_.size, 0, 0, 0);
+	display_.RestoreRect(posX_, posY_, currentPiece_.size, currentPiece_.size);
 	posY_ = display_.getHeight() - calcHeightOfPiece(false);
-	display_.DrawPieceAt(posX_, posY_, currentPiece_);
-}
-
-void Game::UpdateLook(int oldX, int oldY)
-{
-	display_.FillRect(oldX, oldY, currentPiece_.size, currentPiece_.size, 0, 0, 0);
-	display_.DrawPieceAt(posX_, posY_, currentPiece_);
+	FreezePiece();
 }
 
 // --- Private ----
@@ -64,7 +61,8 @@ void Game::SpawnNewPiece()
 		bag_ = { 0, 1, 2, 3, 4, 5, 6 };
 		std::shuffle(bag_.begin(), bag_.end(), rng_);
 	}
-	currentPiece_ = PIECES[bag_.back()];
+	currentType_ = bag_.back();
+	currentPiece_ = PIECES[currentType_];
 	bag_.pop_back();
 	posX_ = 3;
 	posY_ = 0;
@@ -74,17 +72,24 @@ void Game::SpawnNewPiece()
 
 int Game::calcHeightOfPiece(const bool ifRotate)
 {
-	int minY = 4;
 	int maxY = -1;
 
 	for (int y = 0; y < currentPiece_.size; y++)
 		for (int x = 0; x < currentPiece_.size; x++)
 			if (currentPiece_.cells[y][x])
-			{
-				int row = ifRotate ? x : y;
-				minY = std::min(minY, row);
-				maxY = std::max(maxY, row);
-			}
+				maxY = std::max(maxY, ifRotate ? x : y);
 
-	return maxY - minY + 1;
+	return maxY + 1;
+}
+
+void Game::UpdateLook(int oldX, int oldY)
+{
+	display_.RestoreRect(oldX, oldY, currentPiece_.size, currentPiece_.size);
+	display_.DrawPieceAt(posX_, posY_, currentPiece_);
+}
+
+void Game::FreezePiece()
+{
+	display_.FreezePieceAt(posX_, posY_, currentPiece_, currentType_ + 1);
+	SpawnNewPiece();
 }
