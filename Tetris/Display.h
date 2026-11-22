@@ -13,6 +13,7 @@ class Display
 public:
 	Display(Board& board);
 	void DrawScreen();
+	void ShowWelcome();   // ekran powitalny z zasadami (czyści konsolę)
 	void DrawPixelAt(int x, int y, int r, int g, int b);
 	void FillRect(int x, int y, int width, int height, int r, int g, int b);
 	void DrawPieceAt(int x, int y, const struct Piece& piece);

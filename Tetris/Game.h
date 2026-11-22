@@ -1,10 +1,12 @@
 #pragma once
 #include "Display.h"
 #include "Pieces.h"
+#include "Stats.h"
 #include <vector>
 #include <random>
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 
 class Game {
 public:
@@ -23,6 +25,9 @@ public:
 private:
 	Display& display_;
 	Board& board_;
+	IntStat score_;
+	IntStat lines_;
+	IntStat level_;
 	int currentType_;
 	Piece currentPiece_;
 	bool gameOver_ = false;

@@ -6,6 +6,7 @@
 #include "Action.h"
 #include "Game.h"
 #include "Board.h"
+#include "Stats.h"	
 
 using Clock = std::chrono::steady_clock;
 
@@ -31,11 +32,6 @@ void Update(Game& game, const double& delta)
 	}
 }
 
-void Render(Display& display)
-{
-	//display.DrawStats();
-}
-
 int main() 
 {
 	static const int width = 10;
@@ -43,6 +39,16 @@ int main()
 
 	Board board(width, height);
 	Display display(board);
+
+	// --- ekran powitalny ---
+	display.ShowWelcome();
+	_getch();                        // czekamy na dowolny klawisz
+	while (_kbhit()) _getch();       // strzałka to 2 kody - wyrzucamy resztę, żeby nie ruszyła klocka
+	display.DrawScreen();            // z powrotem plansza
+
+	TextStat title(display, 0, L"-=- TETRIS -=-");
+	FloatStat time(display, 1, L"Czas: ", 0.0);
+
 	Game game = Game(display, board);
 
     const auto frameTime = std::chrono::milliseconds((int)(1000.0 / 30.0)); // ~30 FPS
@@ -66,7 +72,6 @@ int main()
 		}
 
 		Update(game, dt);
-		Render(display);
 
 		// limit FPS (żeby nie zjadać 100% CPU)
 		auto elapsed = Clock::now() - frameStart;
@@ -80,25 +85,3 @@ int main()
 		std::wcout << L"Do zobaczenia\n";
     return 0;
 }
-
-
-/*
-// Wypisujemy jakiś stały interfejs tekstowy, który ma stać w miejscu
-std::wcout << L"=== SILNIK GRAFICZNY W KONSOLI ===\n";
-std::wcout << L"Punkty: 1500\n";
-std::wcout << L"----------------------------------\n";
-
-// Rysujemy piksele w losowych miejscach, kompletnie ignorując tekst powyżej
-drawPixelAt(0, 0, 255, 0, 0);
-drawPixelAt(1, 1, 0, 255, 0);
-drawPixelAt(2, 2, 0, 0, 255);
-drawPixelAt(10, 20, 255, 255, 255);
-
-// Na koniec przesuwamy kursor bezpiecznie na dół, żeby tekst systemowy niczego nie zamazal
-//std::wcout << L"\033[12;1H";
-
-//std::wcout << L"\033[38;2;255;0;0m" << L"░░" << L" - 25%\n";
-//std::wcout << L"\033[38;2;0;255;0m" << L"▒▒" << L" - 50%\n";
-//std::wcout << L"\033[38;2;0;0;255m" << L"▓▓" << L" - 75%\n";
-//std::wcout << L"\033[38;2;255;255;0m" << L"██" << L" - 100%\n\n";
-*/

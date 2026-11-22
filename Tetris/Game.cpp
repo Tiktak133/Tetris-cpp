@@ -1,6 +1,6 @@
 #include "Game.h"
 
-Game::Game(Display& display, Board& board) : display_(display), board_(board)
+Game::Game(Display& display, Board& board) : display_(display), board_(board), score_(display, 3, L"Punkty: ", 0), lines_(display, 4, L"Linie: ", 0), level_(display, 5, L"Poziom: ", 0)
 {
 	fallInterval = 1.0;   // klocek spada co 1.0 s
 	fallTimer = 0;
@@ -14,10 +14,10 @@ Game::Game(Display& display, Board& board) : display_(display), board_(board)
 
 Game::~Game()
 {
-
+	score_.~IntStat();
+	lines_.~IntStat();
+	level_.~IntStat();
 }
-
-
 
 void Game::MovePieceDown()
 {
@@ -63,8 +63,10 @@ void Game::RotatePiece() //90 stopni zgodnie z zegarem
 void Game::DropPiece()
 {
 	display_.RestoreRect(posX_, posY_, currentPiece_.size, currentPiece_.size);
+	int startY = posY_;
 	while (CanPlace(currentPiece_, posX_, posY_ + 1))
 		posY_++;
+	score_ += 2 * (posY_ - startY);   // 2 punkty za każde pole zrzutu
 	FreezePiece();
 }
 
@@ -128,8 +130,19 @@ void Game::FreezePiece()
 	display_.DrawPieceAt(posX_, posY_, currentPiece_);
 
 	int lowestRow = posY_ + currentPiece_.size - 1;
-	if (board_.ClearFullRows(posY_, lowestRow) > 0)
+	int cleared = board_.ClearFullRows(posY_, lowestRow);
+	if (cleared > 0)
+	{
 		display_.RestoreRect(0, 0, board_.Width(), std::min(lowestRow + 1, board_.Height()));
+
+		const int points[5] = { 0, 100, 300, 500, 800 };
+		score_ += points[cleared] * level_.Get();
+		lines_ += cleared;
+		level_ = 1 + lines_.Get() / 10;   // co 10 linii poziom wyżej
+
+		int lv = level_.Get();
+		fallInterval = std::max(0.05, std::pow(0.8 - (lv - 1) * 0.007, lv - 1));   // szybsze spadanie
+	}
 
 	SpawnNewPiece();
 }

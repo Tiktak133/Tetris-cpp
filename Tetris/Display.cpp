@@ -6,7 +6,6 @@ Display::Display(Board& board) : board_(board) // referencję trzeba ustawić tu
 	width_ = board.Width();
 	height_ = board.Height();
 	InitSysCompatible();
-	DrawScreen();
 }
 
 void Display::InitSysCompatible() 
@@ -36,6 +35,7 @@ void Display::DrawScreen()
 	const wchar_t BR = L'\u255D';	// ╝
 
 	std::wstring border(width_ * 2, H);
+	std::wcout << L"\033[2J\033[H"; // czysty ekran i kursor w lewy górny róg (np. po ekranie powitalnym)
 	std::wcout << TL << border << TR << L'\n';
 	for (int i = 0; i < height_; i++)
 		std::wcout << V << std::wstring(width_ * 2, L' ') << V << L'\n';
@@ -93,6 +93,53 @@ void Display::RestoreRect(int x, int y, int width, int height)
 				DrawPixelAt(i, j, c.r, c.g, c.b);
 			}
 		}
+}
+
+void Display::ShowWelcome()
+{
+	const std::wstring bold = L"\033[1m";
+	const std::wstring reset = L"\033[0m";
+
+	std::wcout << L"\033[2J\033[H\n";
+
+	// tytuł: każda litera w kolorze innego klocka
+	const std::wstring title = L"T E T R I S";
+	std::wcout << L"   " << bold;
+	for (size_t i = 0, piece = 0; i < title.size(); i++)
+	{
+		if (title[i] == L' ')
+		{
+			std::wcout << L' ';
+			continue;
+		}
+		const Color& c = PIECES[piece++ % 7].color;
+		std::wcout << L"\033[38;2;" << c.r << L";" << c.g << L";" << c.b << L"m" << title[i];
+	}
+	std::wcout << reset << L"\n\n";
+
+	std::wcout
+		<< L"   Układaj spadające klocki tak, aby tworzyły pełne poziome linie.\n"
+		<< L"   Pełna linia znika, a Ty dostajesz punkty.\n\n"
+
+		<< L"   " << bold << L"STEROWANIE" << reset << L"\n"
+		<< L"     A / ←     ruch w lewo\n"
+		<< L"     D / →     ruch w prawo\n"
+		<< L"     W / ↑     obrót\n"
+		<< L"     S / ↓     zrzut na dół\n"
+		<< L"     Esc       wyjście\n\n"
+
+		<< L"   " << bold << L"PUNKTACJA" << reset << L" (mnożona przez poziom)\n"
+		<< L"     1 linia   100\n"
+		<< L"     2 linie   300\n"
+		<< L"     3 linie   500\n"
+		<< L"     4 linie   800   TETRIS!\n"
+		<< L"     zrzut     2 pkt za każde pole\n\n"
+
+		<< L"   " << bold << L"POZIOMY" << reset << L"\n"
+		<< L"     Co 10 linii poziom rośnie, a klocki spadają szybciej.\n"
+		<< L"     Gra kończy się, gdy nowy klocek nie ma już miejsca.\n\n"
+
+		<< L"   " << bold << L"Naciśnij dowolny klawisz, aby zacząć..." << reset;
 }
 
 void Display::DrawText(int row, const std::wstring& text)
