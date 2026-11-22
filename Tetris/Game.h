@@ -11,24 +11,27 @@ public:
 	double fallInterval;
 	double fallTimer;
 
-	Game(Display& display);
+	Game(Display& display, Board& board);
 	~Game();
 	void MovePieceDown();
 	void MovePieceLeft();
 	void MovePieceRight();
 	void RotatePiece();
 	void DropPiece();
+	bool IsGameOver() const { return gameOver_; }
 
 private:
 	Display& display_;
+	Board& board_;
 	int currentType_;
 	Piece currentPiece_;
-	void SpawnNewPiece();
+	bool gameOver_ = false;
 	std::vector<int> bag_;
 	int posX_;
 	int posY_;
 	std::mt19937 rng_; // generator liczb losowych
-	int calcHeightOfPiece(const bool ifRotate = false);
+	void SpawnNewPiece();
+	bool CanPlace(const Piece& piece, int x, int y) const;
 	void UpdateLook(int oldX, int oldY);
 	void FreezePiece();
 };

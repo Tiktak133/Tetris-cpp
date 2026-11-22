@@ -1,10 +1,10 @@
 #include "Display.h"
+#include <format>
 
-Display::Display(int width, int height)
+Display::Display(Board& board) : board_(board) // referencję trzeba ustawić tutaj, nie w ciele konstruktora
 {
-	board_.resize(width * height, 0);
-	width_ = width;
-	height_ = height;
+	width_ = board.Width();
+	height_ = board.Height();
 	InitSysCompatible();
 	DrawScreen();
 }
@@ -70,17 +70,6 @@ void Display::DrawPieceAt(int x, int y, const struct Piece& piece)
 				DrawPixelAt(x + i, y + j, piece.color.r, piece.color.g, piece.color.b);
 }
 
-// value = typ klocka + 1 (0 oznacza pustą kratkę)
-void Display::FreezePieceAt(int x, int y, const struct Piece& piece, unsigned char value)
-{
-	for (int j = 0; j < piece.size; j++)
-		for (int i = 0; i < piece.size; i++)
-			if (piece.cells[j][i])
-				SetCell(x + i, y + j, value);
-
-	DrawPieceAt(x, y, piece);
-}
-
 void Display::Clear()
 {
 	FillRect(0, 0, width_, height_, 0, 0, 0);
@@ -95,7 +84,7 @@ void Display::RestoreRect(int x, int y, int width, int height)
 			if (i < 0 || i >= width_ || j < 0 || j >= height_)
 				continue; // poza planszą - nie rysujemy (nie zamaże ramki)
 
-			unsigned char value = GetCell(i, j);
+			unsigned char value = board_.Get(i, j);
 			if (value == 0)
 				DrawPixelAt(i, j, 0, 0, 0);
 			else
@@ -106,16 +95,23 @@ void Display::RestoreRect(int x, int y, int width, int height)
 		}
 }
 
-void Display::SetCell(int x, int y, unsigned char value)
+void Display::DrawText(int row, const std::wstring& text)
 {
-	if (x < 0 || x >= width_ || y < 0 || y >= height_)
-		return; // poza planszą - nic nie zapisujemy
-	board_[y * width_ + x] = value;
+	// kolumna: za prawą ramką planszy + 2 spacje odstępu
+	std::wcout << L"\033[" << (row + 2) << L";" << (width_ * 2 + 5) << L"H";
+	// \033[K czyści resztę linii - gdy nowy tekst jest krótszy od starego, nie zostaną śmieci
+	std::wcout << text << L"\033[K";
+	std::wcout << L"\033[" << (height_ + 3) << L";1H";
 }
 
-unsigned char Display::GetCell(int x, int y) const
+void Display::DrawStat(int row, const std::wstring& label, int value)
 {
-	return board_[y * width_ + x];
+	DrawText(row, label + L": " + std::to_wstring(value));
+}
+
+void Display::DrawStat(int row, const std::wstring& label, double value)
+{
+	DrawText(row, label + L": " + std::format(L"{:.2f}", value)); // 2 miejsca po przecinku
 }
 
 Display::~Display()

@@ -1,6 +1,6 @@
 #include "Game.h"
 
-Game::Game(Display& display) : display_(display) 
+Game::Game(Display& display, Board& board) : display_(display), board_(board)
 {
 	fallInterval = 1.0;   // klocek spada co 1.0 s
 	fallTimer = 0;
@@ -21,34 +21,50 @@ Game::~Game()
 
 void Game::MovePieceDown()
 {
-	if (posY_ < display_.getHeight() - calcHeightOfPiece(false))
+	if (CanPlace(currentPiece_, posX_, posY_ + 1))
 		UpdateLook(posX_, posY_++);
 	else
-		FreezePiece();
+		FreezePiece(); // niżej nie ma miejsca - klocek zostaje zamrożony
 }
 
 void Game::MovePieceLeft()
 {
-	if (posX_ > 0)
+	if (CanPlace(currentPiece_, posX_ - 1, posY_))
 		UpdateLook(posX_--, posY_);
 }
 
 void Game::MovePieceRight()
 {
-	if (posX_ < display_.getWidth() - currentPiece_.size)
+	if (CanPlace(currentPiece_, posX_ + 1, posY_))
 		UpdateLook(posX_++, posY_);
 }
 
 void Game::RotatePiece() //90 stopni zgodnie z zegarem
 {
-	Rotate(currentPiece_);
-	UpdateLook(posX_, posY_);
+	Piece rotated = currentPiece_;
+	Rotate(rotated); // obracamy kopię - oryginał zostaje, jeśli obrót się nie zmieści
+
+	// Korekta ("wall kick"): najpierw w miejscu, potem przesunięcie w bok.
+	// +-2 jest potrzebne dla klocka I przy ścianie.
+	for (int dx : { 0, -1, 1, -2, 2 })
+	{
+		if (CanPlace(rotated, posX_ + dx, posY_))
+		{
+			int oldX = posX_;
+			currentPiece_ = rotated;
+			posX_ += dx;
+			UpdateLook(oldX, posY_);
+			return;
+		}
+	}
+	// żadna pozycja nie pasuje - obrót się nie wykonuje
 }
 
 void Game::DropPiece()
 {
 	display_.RestoreRect(posX_, posY_, currentPiece_.size, currentPiece_.size);
-	posY_ = display_.getHeight() - calcHeightOfPiece(false);
+	while (CanPlace(currentPiece_, posX_, posY_ + 1))
+		posY_++;
 	FreezePiece();
 }
 
@@ -67,19 +83,33 @@ void Game::SpawnNewPiece()
 	posX_ = 3;
 	posY_ = 0;
 
+	if (!CanPlace(currentPiece_, posX_, posY_))
+	{
+		gameOver_ = true;
+		return;
+	}
+
 	UpdateLook(posX_, posY_);
 }
 
-int Game::calcHeightOfPiece(const bool ifRotate)
+// Czy klocek zmieści się na pozycji (x, y)? Sprawdza tylko zajęte kratki klocka:
+// muszą być w granicach planszy i na pustym polu warstwy stałej.
+bool Game::CanPlace(const Piece& piece, int x, int y) const
 {
-	int maxY = -1;
+	for (int j = 0; j < piece.size; j++)
+		for (int i = 0; i < piece.size; i++)
+		{
+			if (!piece.cells[j][i])
+				continue; // puste pola macierzy nie mają znaczenia
 
-	for (int y = 0; y < currentPiece_.size; y++)
-		for (int x = 0; x < currentPiece_.size; x++)
-			if (currentPiece_.cells[y][x])
-				maxY = std::max(maxY, ifRotate ? x : y);
-
-	return maxY + 1;
+			int bx = x + i;
+			int by = y + j;
+			if (bx < 0 || bx >= board_.Width() || by < 0 || by >= board_.Height())
+				return false; // poza planszą
+			if (board_.Get(bx, by) != 0)
+				return false; // zajęte przez zamrożony klocek
+		}
+	return true;
 }
 
 void Game::UpdateLook(int oldX, int oldY)
@@ -90,6 +120,16 @@ void Game::UpdateLook(int oldX, int oldY)
 
 void Game::FreezePiece()
 {
-	display_.FreezePieceAt(posX_, posY_, currentPiece_, currentType_ + 1);
+	for (int j = 0; j < currentPiece_.size; j++)
+		for (int i = 0; i < currentPiece_.size; i++)
+			if (currentPiece_.cells[j][i])
+				board_.Set(posX_ + i, posY_ + j, currentType_ + 1);
+
+	display_.DrawPieceAt(posX_, posY_, currentPiece_);
+
+	int lowestRow = posY_ + currentPiece_.size - 1;
+	if (board_.ClearFullRows(posY_, lowestRow) > 0)
+		display_.RestoreRect(0, 0, board_.Width(), std::min(lowestRow + 1, board_.Height()));
+
 	SpawnNewPiece();
 }

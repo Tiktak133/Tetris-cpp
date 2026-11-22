@@ -5,6 +5,7 @@
 #include <conio.h>
 #include "Action.h"
 #include "Game.h"
+#include "Board.h"
 
 using Clock = std::chrono::steady_clock;
 
@@ -37,15 +38,19 @@ void Render(Display& display)
 
 int main() 
 {
-	Display display(10, 20);
-	Game game = Game(display);
+	static const int width = 10;
+	static const int height = 20;
+
+	Board board(width, height);
+	Display display(board);
+	Game game = Game(display, board);
 
     const auto frameTime = std::chrono::milliseconds((int)(1000.0 / 30.0)); // ~30 FPS
 
     auto last = Clock::now();
     bool running = true;
 
-	while (running)
+	while (running && !game.IsGameOver())
 	{
 		// --- delta ---
 		auto frameStart = Clock::now();
@@ -69,6 +74,10 @@ int main()
 			std::this_thread::sleep_for(frameTime - elapsed);
 	}
 
+	if (game.IsGameOver())
+		std::wcout << L"Koniec gry!\n";
+	else
+		std::wcout << L"Do zobaczenia\n";
     return 0;
 }
 
