@@ -1,9 +1,9 @@
 #include "Game.h"
 
-Game::Game(Display& display, Board& board) : display_(display), board_(board), score_(display, 3, L"Punkty: ", 0), lines_(display, 4, L"Linie: ", 0), level_(display, 5, L"Poziom: ", 0)
+Game::Game(Display& display, Board& board) : display_(display), board_(board), score_(display, 3, L"Punkty", 0), lines_(display, 4, L"Linie", 0), level_(display, 5, L"Poziom", 1)
 {
-	fallInterval = 1.0;   // klocek spada co 1.0 s
-	fallTimer = 0;
+	fallInterval_ = 1.0;   // klocek spada co 1.0 s
+	fallTimer_ = 0;
 	posX_ = 3;
 	posY_ = 0;
 	bag_ = std::vector<int>();
@@ -12,11 +12,22 @@ Game::Game(Display& display, Board& board) : display_(display), board_(board), s
 	SpawnNewPiece();
 }
 
-Game::~Game()
+void Game::Update(double delta)
 {
-	score_.~IntStat();
-	lines_.~IntStat();
-	level_.~IntStat();
+	if (gameOver_)
+		return;
+
+	fallTimer_ += delta;
+	while (fallTimer_ >= fallInterval_ && !gameOver_)
+	{
+		fallTimer_ -= fallInterval_;
+		MovePieceDown();
+	}
+}
+
+void Game::SetFallInterval(double seconds)
+{
+	fallInterval_ = std::max(0.05, seconds); // nie szybciej niż 20 pól na sekundę
 }
 
 void Game::MovePieceDown()
@@ -141,7 +152,7 @@ void Game::FreezePiece()
 		level_ = 1 + lines_.Get() / 10;   // co 10 linii poziom wyżej
 
 		int lv = level_.Get();
-		fallInterval = std::max(0.05, std::pow(0.8 - (lv - 1) * 0.007, lv - 1));   // szybsze spadanie
+		SetFallInterval(std::pow(0.8 - (lv - 1) * 0.007, lv - 1));   // szybsze spadanie
 	}
 
 	SpawnNewPiece();

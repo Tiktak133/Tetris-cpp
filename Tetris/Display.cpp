@@ -1,5 +1,12 @@
 #include "Display.h"
 #include <format>
+#include <stdexcept>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#undef DrawText // windows.h ma makro DrawText, które psułoby metodę Display::DrawText
+#endif
 
 Display::Display(Board& board) : board_(board) // referencję trzeba ustawić tutaj, nie w ciele konstruktora
 {
@@ -12,6 +19,13 @@ void Display::InitSysCompatible()
 {
 #ifdef _WIN32
 	(void)_setmode(_fileno(stdout), _O_U16TEXT); // Konfiguracja konsoli pod Visual Studio / Windows
+
+	// Włączenie kolorów i sekwencji ANSI - na Windows 10 (zwykła konsola) są domyślnie wyłączone
+	HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD mode = 0;
+	if (!GetConsoleMode(out, &mode))
+		throw std::runtime_error("Gra musi być uruchomiona w oknie konsoli (wyjście nie może być przekierowane do pliku)");
+	SetConsoleMode(out, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 #else
 	try {
 		std::locale::global(std::locale("C.UTF-8"));
@@ -139,7 +153,7 @@ void Display::ShowWelcome()
 		<< L"     Co 10 linii poziom rośnie, a klocki spadają szybciej.\n"
 		<< L"     Gra kończy się, gdy nowy klocek nie ma już miejsca.\n\n"
 
-		<< L"   " << bold << L"Naciśnij dowolny klawisz, aby zacząć..." << reset;
+		<< L"   " << bold << L"Naciśnij dowolny klawisz, aby zacząć..." << reset << L"\n";
 }
 
 void Display::DrawText(int row, const std::wstring& text)

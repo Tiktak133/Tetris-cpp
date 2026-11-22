@@ -13,13 +13,12 @@ class Display
 public:
 	Display(Board& board);
 	void DrawScreen();
-	void ShowWelcome();   // ekran powitalny z zasadami (czyści konsolę)
+	void ShowWelcome();
 	void DrawPixelAt(int x, int y, int r, int g, int b);
 	void FillRect(int x, int y, int width, int height, int r, int g, int b);
 	void DrawPieceAt(int x, int y, const struct Piece& piece);
 	void Clear();
 	void RestoreRect(int x, int y, int width, int height);
-	unsigned char GetCell(int x, int y) const;
 
 	// Panel z prawej strony planszy. row = wiersz liczony od górnej krawędzi planszy (0, 1, 2...)
 	void DrawText(int row, const std::wstring& text);

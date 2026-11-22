@@ -6,9 +6,24 @@
 #include "Action.h"
 #include "Game.h"
 #include "Board.h"
-#include "Stats.h"	
+#include "Stats.h"
+#include <stdexcept>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#undef DrawText // makro z windows.h koliduje z Display::DrawText
 
 using Clock = std::chrono::steady_clock;
+
+// Komunikat wyjątku (e.what()) to tekst UTF-8 w char*, a konsola pisze znakami szerokimi (wchar_t)
+std::wstring Utf8ToWide(const char* text)
+{
+	int len = MultiByteToWideChar(CP_UTF8, 0, text, -1, nullptr, 0);
+	std::wstring result(len > 0 ? len - 1 : 0, L'\0');
+	if (len > 1)
+		MultiByteToWideChar(CP_UTF8, 0, text, -1, result.data(), len);
+	return result;
+}
 
 void Inputs(Game& game, const Action& action)
 {
@@ -22,17 +37,7 @@ void Inputs(Game& game, const Action& action)
 	}
 }
 
-void Update(Game& game, const double& delta)
-{
-	game.fallTimer += delta;                          
-	while (game.fallTimer >= game.fallInterval)    
-	{
-		game.fallTimer -= game.fallInterval;       
-		game.MovePieceDown();
-	}
-}
-
-int main() 
+int RunGame()
 {
 	static const int width = 10;
 	static const int height = 20;
@@ -44,10 +49,10 @@ int main()
 	display.ShowWelcome();
 	_getch();                        // czekamy na dowolny klawisz
 	while (_kbhit()) _getch();       // strzałka to 2 kody - wyrzucamy resztę, żeby nie ruszyła klocka
-	display.DrawScreen();            // z powrotem plansza
+	display.DrawScreen();
 
 	TextStat title(display, 0, L"-=- TETRIS -=-");
-	FloatStat time(display, 1, L"Czas: ", 0.0);
+	FloatStat time(display, 1, L"Czas", 0.0);
 
 	Game game = Game(display, board);
 
@@ -71,7 +76,8 @@ int main()
 			else Inputs(game, a);
 		}
 
-		Update(game, dt);
+		game.Update(dt);
+		time += dt;
 
 		// limit FPS (żeby nie zjadać 100% CPU)
 		auto elapsed = Clock::now() - frameStart;
@@ -79,9 +85,29 @@ int main()
 			std::this_thread::sleep_for(frameTime - elapsed);
 	}
 
-	if (game.IsGameOver())
-		std::wcout << L"Koniec gry!\n";
-	else
-		std::wcout << L"Do zobaczenia\n";
+	std::wcout << (game.IsGameOver() ? L"Koniec gry!\n" : L"Do zobaczenia\n");
+	std::vector<const Stat*> summary = game.GetStats();
+	summary.insert(summary.begin(), &time);
+	for (const Stat* s : summary)
+		std::wcout << L"  " << s->Text() << L"\n";
+
+	std::wcout << L"\nNaciśnij Enter, aby zamknąć...";
+	while (_getch() != 13) {}   // 13 = Enter; inne klawisze (np. przytrzymana strzałka) są ignorowane
+
     return 0;
+}
+
+int main()
+{
+	try
+	{
+		return RunGame();
+	}
+	catch (const std::exception& e)
+	{
+		(void)_setmode(_fileno(stderr), _O_U16TEXT);
+		std::wcerr << L"\033[0m\033[?25h\n"           // reset kolorów i widoczny kursor
+		           << L"Błąd: " << Utf8ToWide(e.what()) << L"\n";
+		return 1;
+	}
 }

@@ -10,24 +10,31 @@
 
 class Game {
 public:
-	double fallInterval;
-	double fallTimer;
-
 	Game(Display& display, Board& board);
-	~Game();
+	void Update(double delta);
 	void MovePieceDown();
 	void MovePieceLeft();
 	void MovePieceRight();
 	void RotatePiece();
 	void DropPiece();
+
+	// --- gettery ---
 	bool IsGameOver() const { return gameOver_; }
+	std::vector<const Stat*> GetStats() const { return { &score_, &lines_, &level_ }; } // wszystkie statystyki gry
+
+	// --- settery ---
+	void SetFallInterval(double seconds); // pilnuje minimalnej wartości
 
 private:
+	double fallInterval_;            // co ile sekund klocek spada o 1 pole
+	double fallTimer_;               // ile czasu minęło od ostatniego kroku w dół
 	Display& display_;
 	Board& board_;
+
 	IntStat score_;
 	IntStat lines_;
 	IntStat level_;
+
 	int currentType_;
 	Piece currentPiece_;
 	bool gameOver_ = false;

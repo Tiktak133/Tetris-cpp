@@ -11,12 +11,18 @@ Stat::Stat(Display& display, int row, const std::wstring& label) : display_(&dis
 {
 }
 
+std::wstring Stat::Text() const
+{
+	// ValueText() jest wirtualne - wywoła się wersja z IntStat, FloatStat albo TextStat
+	return label_.empty() ? ValueText() : label_ + L": " + ValueText();
+}
+
 void Stat::Redraw()
 {
 	if (display_ == nullptr)
 		return; // obiekt z konstruktora domyślnego - nie ma gdzie rysować
 
-	std::wstring text = label_.empty() ? ValueText() : label_ + L": " + ValueText();
+	std::wstring text = Text();
 	if (text == lastDrawn_)
 		return; // na ekranie już jest ten sam tekst
 

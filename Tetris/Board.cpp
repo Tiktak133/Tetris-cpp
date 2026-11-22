@@ -1,16 +1,31 @@
 #include "Board.h"
 #include <algorithm>
+#include <stdexcept>
 
-Board::Board(int width, int height) : width_(width), height_(height), cells_(width * height, 0)
-{ }
+Board::Board(int width, int height) : width_(width), height_(height)
+{
+	// konstruktor nie może zwrócić błędu - zostaje wyjątek
+	if (width <= 0 || height <= 0)
+		throw std::invalid_argument("Rozmiar planszy musi być większy od zera");
+
+	cells_.assign(width * height, 0);
+}
 
 unsigned char Board::Get(int x, int y) const
 {
+	// bez sprawdzenia odczytalibyśmy cudzą pamięć
+	if (x < 0 || x >= width_ || y < 0 || y >= height_)
+		throw std::out_of_range("Board::Get - współrzędne poza planszą");
+
 	return cells_[y * width_ + x];
 }
 
 void Board::Set(int x, int y, unsigned char v)
 {
+	// bez sprawdzenia nadpisalibyśmy cudzą pamięć
+	if (x < 0 || x >= width_ || y < 0 || y >= height_)
+		throw std::out_of_range("Board::Set - współrzędne poza planszą");
+
 	cells_[y * width_ + x] = v;
 }
 

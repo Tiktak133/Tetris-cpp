@@ -11,6 +11,8 @@ public:
 	Stat(Display& display, int row, const std::wstring& label);
 	virtual ~Stat() = default;
 
+	std::wstring Text() const;   // "etykieta: wartość" - wartość daje wirtualne ValueText() klasy pochodnej
+
 protected:
 	virtual std::wstring ValueText() const = 0;
 	void Redraw();
